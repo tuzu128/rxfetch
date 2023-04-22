@@ -27,7 +27,7 @@ c10=${bgwhite}
 
 # Get the kernel
 # This will decide the further actionsvand command usages as bsd and gnu tools even with same name are DIFFERENT.
-kernel=$(uname -s)
+kernel=$(uname -o)
 
 # Setup fonts
 setup_fonts() {
@@ -58,19 +58,25 @@ get_init() {
 
 # Get count of packages installed
 get_pkg_count() {
-	package_managers=('xbps-install' 'apk' 'port' 'apt' 'pacman' 'nix' 'dnf' 'rpm' 'emerge')
+	package_managers=('xbps-install' 'apk' 'port' 'apt' 'pacman' 'nix' 'dnf' 'rpm' 'emerge' 'eopkg')
 	for package_manager in "${package_managers[@]}"; do
 		if command -v "$package_manager" 2>/dev/null >&2; then
 			case "$package_manager" in
 			xbps-install) xbps-query -l | wc -l ;;
 			apk) apk search | wc -l ;;
-			apt) echo $(($(apt list --installed 2>/dev/null | wc -l) - 1)) ;;
+			apt) if [ "$kernel" != "Darwin" ]; then 
+					echo $(($(apt list --installed 2>/dev/null | wc -l) - 1))
+				 else
+					echo 0
+				 fi
+				 ;;
 			pacman) pacman -Q | wc -l ;;
 			nix) nix-env -qa --installed '*' | wc -l ;;
 			dnf) dnf list installed | wc -l ;;
 			rpm) rpm -qa | wc -l ;;
 			emerge) qlist -I | wc -l ;;
 			port) port installed 2>/dev/null | wc -l | awk 'NR==1{print $1}' ;;
+			eopkg) eopkg li | wc -l ;;
 			esac
 
 			# if a package manager is found return from the function
@@ -222,19 +228,15 @@ get_de_wm() {
 	}
 
 	# for non-EWMH WMs
-	[ ! "$wm" ] || [ "$wm" = "LG3D" ] &&
-		wm=$(pgrep -m 1 -o \
-			-e "sway" \
-			-e "kiwmi" \
-			-e "wayfire" \
-			-e "sowm" \
-			-e "catwm" \
-			-e "fvwm" \
-			-e "dwm" \
-			-e "2bwm" \
-			-e "monsterwm" \
-			-e "tinywm" \
-			-e "xmonad")
+	[ ! "$wm" ] || [ "$wm" = "LG3D" ] && {
+		wms=('sway' 'kiwmi' 'wayfire' 'sowm' 'catwm' 'fvwm' 'dwm' '2bwm' 'monsterwm' 'tinywm' 'xmonad')
+		for current_wm in "${wms[@]}"; do
+			if pgrep -x "$current_wm" 2>/dev/null >&2; then
+				wm="${current_wm}";
+				break
+			fi
+		done
+	}
 
 	echo "${wm:-unknown}"
 }
