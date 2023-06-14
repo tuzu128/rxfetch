@@ -63,8 +63,8 @@ get_pkg_count() {
 		if command -v "$package_manager" 2>/dev/null >&2; then
 			case "$package_manager" in
 			xbps-install) xbps-query -l | wc -l ;;
-			apk) apk search | wc -l ;;
-			apt) if [ "$kernel" != "Darwin" ]; then 
+			apk) apk info | wc -l ;;
+			apt) if [ "$kernel" != "Darwin" ]; then
 					echo $(($(apt list --installed 2>/dev/null | wc -l) - 1))
 				 else
 					echo 0
